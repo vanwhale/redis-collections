@@ -9,12 +9,27 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Evan Whalen"]
-  s.date = "2013-03-18"
+  s.date = "2013-03-19"
   s.description = "redis-collections associates collections of models with an object, similar how to redis-objects associates Redis data types with an object."
   s.email = "evanwhalendev@gmail.com"
   s.extra_rdoc_files = [
     "LICENSE.txt",
     "README.md"
+  ]
+  s.files = [
+    "Gemfile",
+    "Gemfile.lock",
+    "LICENSE.txt",
+    "README.md",
+    "Rakefile",
+    "VERSION",
+    "lib/redis-collections.rb",
+    "lib/redis/collection.rb",
+    "lib/redis/collections.rb",
+    "mongoid.yml",
+    "redis-collections.gemspec",
+    "spec/redis_collections_spec.rb",
+    "spec/spec_helper.rb"
   ]
   s.homepage = "http://github.com/evanwhalen/redis-collections"
   s.licenses = ["MIT"]
