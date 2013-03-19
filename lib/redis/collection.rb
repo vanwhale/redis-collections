@@ -44,6 +44,10 @@ class Redis
       list.key
     end
     
+    def counter_key
+      counter_hash.key
+    end
+    
     def value(object)
       object.send(foreign_key)
     end
