@@ -11,7 +11,7 @@ class Redis
     
     def initialize(key, *args)
       @list = Redis::List.new(key, *args)
-      counter_hash_key = key.gsub(/list/, 'hash')
+      counter_hash_key = options[:counter_key] || [key, 'counter'].join(":")
       @counter_hash = Redis::HashKey.new(counter_hash_key, *args)
       
       unless options[:foreign_key].blank?
@@ -48,6 +48,10 @@ class Redis
       object.send(foreign_key)
     end
     
+    def value_key(object)
+      value(object).to_s.to_sym
+    end
+    
     def foreign_key
       options[:foreign_key] || :id
     end
@@ -61,16 +65,26 @@ class Redis
     end
     
     def all
-      @all ||= values_keys.map do |value|
-        object_map[value]
+      value_keys.map do |value_key|
+        ordered_object_map[value_key]
       end
     end
     
-    def values_keys
+    def value_keys
       values.map(&:to_sym)
     end
     
-    def object_map
+    def ordered_object_map
+      unordered_map = unordered_object_map
+      object_map = value_keys.inject({}) do |map, value_key|
+        object = unordered_map[value_key]
+        map.merge(value_key => object)
+      end
+      delete_objects_not_found(object_map)
+      object_map
+    end
+    
+    def unordered_object_map
       if defined?(::Mongoid) && model.included_modules.include?(::Mongoid::Document)
         results = model.where(foreign_key.in => values)
         if joins
@@ -81,9 +95,19 @@ class Redis
         model
           .includes(joins)
           .joins(joins)
-          .where("#{foreign_key} in (?)", values.map(&:to_i))
+          .where("#{foreign_key} in (?)", values)
       end.inject({}) do |object_hash, object|
-        object_hash.merge(object.id.to_s.to_sym => object)
+        object_hash.merge(value_key(object) => object)
+      end
+    end
+    
+    def delete_objects_not_found(object_map)
+      not_found = object_map.select do |object_value_key, object|
+        object.nil?
+      end.keys
+
+      not_found.each do |value_not_found|
+        redis.lrem(key, 0, to_redis(value_not_found))
       end
     end
     

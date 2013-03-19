@@ -21,7 +21,6 @@ end
 class CreateBars < ActiveRecord::Migration
   def self.up
     create_table :bars do |t|
-      t.timestamps
     end
   end
 
@@ -65,6 +64,14 @@ describe Redis::Collections do
       collection << object2
       collection.map(&:id).should == [object2, object].map(&:id)
     end
+    
+    it "should remove values for objects not found" do
+      collection << object
+      collection.values = [object.id, 'bogus']
+      collection.values.should include('bogus')
+      collection.all
+      collection.values.should_not include('bogus')
+    end
   end
   
   describe "values=" do
@@ -93,6 +100,15 @@ describe Redis::Collections do
       collection << object
       collection.delete(object)
       collection.should_not include(object)
+    end
+  end
+  
+  describe "increment_counter" do
+    
+    it "should increment counter for object" do
+      collection << object
+      collection.increment_counter(object)
+      collection.counters.should == { object.id.to_s => "1" }
     end
   end
 end
